@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rocket Fuel Ad Incrementality</title>
+<meta name="description" content="Reanalysis of a randomized display-ad experiment (Rocket Fuel for TaskaBella, UC Berkeley Haas case data) and two follow-up experiment designs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --page: #ffffff;
+  --ink: #17202e;
+  --ink-2: #465063;
+  --muted: #7b8494;
+  --hair: #e6e9ee;
+  --axis: #c6ccd5;
+  --wash: #f4f7fb;
+  --blue: #2a78d6;
+  --blue-deep: #1c5cab;
+  --blue-light: #86b6ef;
+  --blue-wash: rgba(42, 120, 214, 0.12);
+  --control: #9aa3af;
+  --band-gray: #cbd0d7;
+  --band-gray-2: #aab1bc;
+  --loss: #6b7380;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --radius: 10px;
+  --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink-2);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+}
+a { color: var(--blue-deep); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--blue-deep);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+.top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 0; border-bottom: 1px solid var(--hair);
+  font-size: 14px;
+}
+.top .project { color: var(--ink); font-weight: 600; }
+.top nav { display: flex; gap: 20px; }
+
+/* Hero */
+.hero { padding: 56px 0 24px; }
+.hero h1 {
+  margin: 0; max-width: 880px;
+  color: var(--ink);
+  font-size: clamp(32px, 4.6vw, 52px);
+  line-height: 1.08; letter-spacing: -0.02em; font-weight: 700;
+}
+.hero h1 .second { display: block; color: var(--ink-2); font-weight: 500; }
+.lede { max-width: 68ch; margin: 22px 0 0; font-size: 17px; }
+.scope {
+  display: inline-block; margin-top: 18px; padding: 6px 12px;
+  background: var(--wash); border-radius: 999px;
+  font-size: 13.5px; color: var(--ink-2);
+}
+
+/* Sections */
+section { padding: 48px 0 8px; }
+section + section { border-top: 1px solid var(--hair); margin-top: 40px; }
+h2 {
+  margin: 0 0 10px; max-width: 34ch;
+  color: var(--ink); font-size: clamp(22px, 2.4vw, 27px);
+  line-height: 1.25; letter-spacing: -0.01em; font-weight: 650;
+}
+h3 { margin: 0 0 8px; color: var(--ink); font-size: 18px; line-height: 1.3; font-weight: 650; }
+.intro { max-width: 68ch; margin: 0 0 24px; }
+.caption { max-width: 72ch; margin: 12px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+.two { display: grid; grid-template-columns: 1.25fr 1fr; gap: 48px; align-items: start; }
+.two.even { grid-template-columns: 1fr 1fr; }
+
+/* Hero chart */
+.mismatch { margin-top: 36px; }
+.chart-title { margin: 0 0 6px; color: var(--ink); font-weight: 600; font-size: 15px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 10px; font-size: 13.5px; color: var(--ink-2); }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; }
+.legend .ln { display: inline-block; width: 16px; height: 2px; margin-right: 7px; vertical-align: 4px; border-radius: 2px; }
+.legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: 0; }
+.mismatch-note { margin-top: 14px; font-size: 15px; color: var(--ink); }
+
+/* KPI tiles */
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 8px; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.tile { padding: 22px 22px 18px; }
+.tile + .tile { border-left: 1px solid var(--hair); }
+.tile .label { font-size: 14px; color: var(--ink-2); }
+.tile .value { margin-top: 2px; color: var(--ink); font-size: 34px; line-height: 1.15; font-weight: 650; letter-spacing: -0.01em; }
+.tile .sub { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.tile .strip { margin-top: 10px; height: 34px; }
+
+/* Process rail (a real sequence, so it is numbered) */
+.rail { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; }
+.rail li { position: relative; padding: 18px 16px 4px 0; }
+.rail li::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--hair); }
+.rail li::after { content: ""; position: absolute; left: 0; top: -1px; width: 28px; height: 3px; border-radius: 2px; background: var(--blue); }
+.rail .n { font-size: 13px; color: var(--blue-deep); font-weight: 600; font-variant-numeric: tabular-nums; }
+.rail .t { color: var(--ink); font-weight: 600; margin: 2px 0 4px; }
+.rail p { margin: 0; font-size: 14px; line-height: 1.5; }
+
+/* Design facts */
+.facts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 10px 18px; font-size: 14.5px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; color: var(--ink); }
+.split { margin-top: 6px; }
+
+/* Toggle */
+.toggle { display: inline-flex; padding: 3px; background: var(--wash); border-radius: 8px; margin: 0 0 14px; }
+.toggle button {
+  border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--ink-2);
+  padding: 6px 14px; border-radius: 6px; cursor: pointer;
+}
+.toggle button[aria-pressed="true"] { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--hair); }
+
+/* Checks */
+.checks { list-style: none; margin: 0; padding: 0; }
+.checks li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--hair); font-size: 14.5px; }
+.checks li:first-child { border-top: 0; padding-top: 4px; }
+.checks .what { color: var(--ink); font-weight: 600; display: block; }
+.icon { width: 22px; height: 22px; margin-top: 1px; }
+
+/* Experiments */
+.exp { padding: 24px 24px 22px; background: var(--wash); border-radius: var(--radius); }
+.exp .q { margin: 0 0 16px; }
+.exp dl { margin: 18px 0 0; display: grid; grid-template-columns: 112px 1fr; gap: 8px 16px; font-size: 14px; }
+.exp dt { color: var(--muted); }
+.exp dd { margin: 0; color: var(--ink); }
+.tag { display: inline-block; font-size: 12.5px; color: var(--ink-2); background: #fff; border-radius: 999px; padding: 2px 10px; margin-bottom: 10px; box-shadow: 0 0 0 1px var(--hair); }
+
+/* Data tables */
+details.data { margin-top: 14px; font-size: 14px; }
+details.data summary { cursor: pointer; color: var(--blue-deep); width: max-content; }
+.table-scroll { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 500; }
+td { color: var(--ink); }
+
+/* Methods */
+.method details { border-top: 1px solid var(--hair); padding: 16px 0; }
+.method details:last-child { border-bottom: 1px solid var(--hair); }
+.method summary { cursor: pointer; color: var(--ink); font-weight: 600; }
+.method ul { margin: 12px 0 0; padding-left: 20px; max-width: 76ch; font-size: 14.5px; }
+.method li { margin: 6px 0; }
+
+footer { margin: 56px 0 0; padding: 24px 0 48px; border-top: 1px solid var(--hair); font-size: 13.5px; color: var(--muted); }
+footer p { margin: 4px 0; max-width: 80ch; }
+
+/* Terms with a hover definition */
+.term { border-bottom: 1px dotted var(--muted); cursor: help; }
+
+/* Charts */
+.chart { width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--font); }
+.axis-label { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mark-label { fill: var(--ink); font-size: 13px; font-weight: 600; }
+.mark-label-light { fill: #ffffff; font-size: 13px; font-weight: 600; }
+.row-label { fill: var(--ink); font-size: 13.5px; }
+.row-sub { fill: var(--muted); font-size: 12px; }
+.hit { fill: transparent; cursor: default; }
+.hoverable:hover .lift-on-hover, .hoverable:focus .lift-on-hover { opacity: 0.82; }
+
+/* Tooltip */
+#tip {
+  position: fixed; z-index: 10; pointer-events: none;
+  max-width: 300px; padding: 10px 12px;
+  background: #fff; color: var(--ink-2);
+  border-radius: 8px; box-shadow: 0 0 0 1px var(--hair), 0 8px 24px rgba(23, 32, 46, 0.12);
+  font-size: 13px; line-height: 1.45;
+  opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s;
+}
+#tip.on { opacity: 1; transform: none; }
+#tip .tt { color: var(--muted); margin-bottom: 4px; }
+#tip .row { display: flex; align-items: baseline; gap: 8px; }
+#tip .row .key { display: inline-block; width: 12px; height: 2px; border-radius: 2px; flex: none; transform: translateY(-3px); }
+#tip .row strong { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
+#tip .note { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hair); color: var(--ink-2); }
+
+@media (max-width: 900px) {
+  .two, .two.even { grid-template-columns: 1fr; gap: 36px; }
+  .tiles { grid-template-columns: 1fr 1fr; }
+  .tile:nth-child(3) { border-left: 0; }
+  .tile:nth-child(n+3) { border-top: 1px solid var(--hair); }
+  .rail { grid-template-columns: repeat(3, 1fr); row-gap: 18px; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  .top nav { gap: 14px; }
+  .hero { padding-top: 36px; }
+  .tiles { grid-template-columns: 1fr; }
+  .tile + .tile { border-left: 0; border-top: 1px solid var(--hair); }
+  .tile { padding: 18px 4px; }
+  .rail { grid-template-columns: 1fr 1fr; }
+  .exp { padding: 20px 16px; }
+  .exp dl { grid-template-columns: 1fr; gap: 2px; }
+  .exp dd { margin-bottom: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #tip { transition: none; }
+  .grow { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="project">Ad incrementality readout</span>
+  <nav aria-label="Project links">
+    <a href="https://github.com/hihisy/rocket-fuel-ads-experiment/blob/main/rocket_fuel_ads_experiment.ipynb">Notebook</a>
+    <a href="https://github.com/hihisy/rocket-fuel-ads-experiment">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<div class="hero">
+  <h1>The ads paid for themselves. <span class="second">Almost half the impressions bought no measurable lift.</span></h1>
+  <p class="lede">TaskaBella needed to determine how many handbag purchases its display ads generated beyond organic word-of-mouth demand. Rocket Fuel randomly assigned <span data-k="testShare"></span> of <span data-k="users"></span> users to the ad and the remaining <span data-k="controlShare"></span> to a public service announcement (PSA) in the same placement. This readout quantifies incremental purchases and ROI, evaluates the size of the control group, and proposes two follow-up experiments.</p>
+  <span class="scope">Reanalysis of UC Berkeley Haas case data. The experiment was run by Rocket Fuel and TaskaBella, Nov 2015 to Feb 2016.</span>
+
+  <div class="mismatch" id="mismatch">
+    <p class="chart-title">Where the ad impressions went, and where the incremental purchases came from</p>
+    <div class="chart" id="chart-mismatch"></div>
+    <div class="legend" id="legend-mismatch"></div>
+    <p class="mismatch-note">Users with 1 to 29 or 200+ impressions received <span data-k="noLiftShare"></span> of ad impressions (<span data-k="noLiftCost"></span> of <span data-k="adCost"></span> in ad spend) and produced about 0% of the incremental purchases.</p>
+    <p class="caption">Impressions per user are grouped into bands chosen after seeing the data, so this view is exploratory. Hover a segment for its lift and ROI with 95% intervals.</p>
+  </div>
+</div>
+
+<section aria-labelledby="h-readout" style="padding-top: 24px;">
+  <h2 id="h-readout" class="sr-only" style="position:absolute;left:-9999px;">Headline numbers</h2>
+  <div class="tiles">
+    <div class="tile">
+      <div class="label"><span class="term" data-def="Test conversion rate minus control conversion rate, counting every assigned user (intention-to-treat).">Conversion lift</span></div>
+      <div class="value" data-k="lift"></div>
+      <div class="sub">95% CI <span data-k="liftCi"></span>, <span data-k="rel"></span> relative</div>
+      <div class="strip chart" id="strip-lift"></div>
+    </div>
+    <div class="tile">
+      <div class="label"><span class="term" data-def="Test users × lift: purchases that would not have happened without the ad.">Incremental purchases</span></div>
+      <div class="value" data-k="inc"></div>
+      <div class="sub">95% CI <span data-k="incCi"></span></div>
+      <div class="strip chart" id="strip-inc"></div>
+    </div>
+    <div class="tile">
+      <div class="label"><span class="term" data-def="(Incremental purchases × $40 − campaign cost) ÷ campaign cost. $40 per conversion and $9 CPM are case assumptions; the interval covers sampling uncertainty in the lift only.">Campaign ROI</span></div>
+      <div class="value" data-k="roi"></div>
+      <div class="sub">95% CI <span data-k="roiCi"></span></div>
+      <div class="strip chart" id="strip-roi"></div>
+    </div>
+    <div class="tile">
+      <div class="label"><span class="term" data-def="Incremental value the 4% control users would have produced had they seen the ad. PSA impressions are already in the campaign cost, so they are not added again.">Cost of the 4% holdout</span></div>
+      <div class="value" data-k="opp"></div>
+      <div class="sub"><span data-k="oppShare"></span> of incremental value</div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-process">
+  <h2 id="h-process">How the test was read</h2>
+  <ol class="rail">
+    <li class="done"><div class="n">1</div><div class="t">Problem</div><p>Separate ad-driven purchases from word-of-mouth demand before reallocating budget.</p></li>
+    <li class="done"><div class="n">2</div><div class="t">Hypothesis</div><p>Ad viewers convert more than PSA viewers, and the gain beats a $9 CPM at $40 per purchase.</p></li>
+    <li class="done"><div class="n">3</div><div class="t">Design</div><p>User-level random split, <span data-k="testShare"></span> ad and <span data-k="controlShare"></span> PSA in the same slot. Run by the two companies.</p></li>
+    <li class="done"><div class="n">4</div><div class="t">Validation</div><p>Split matches the plan. Exposure variables are imbalanced, so splits by them are descriptive.</p></li>
+    <li class="done"><div class="n">5</div><div class="t">Result</div><p><span data-k="lift"></span> lift, <span data-k="inc"></span> purchases, ROI <span data-k="roi"></span> with a lower bound of <span data-k="roiLow"></span>.</p></li>
+    <li class="done"><div class="n">6</div><div class="t">Action</div><p>Keep the campaign. Test a 200-impression cap and higher bids for light users.</p></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-effect">
+  <div class="two">
+    <div>
+      <h2 id="h-effect">The ad raised conversion by <span data-k="lift"></span>, and the whole interval sits above zero</h2>
+      <p class="intro">Conversion is the share of users who bought the handbag during the campaign. Whiskers show 95% confidence intervals.</p>
+      <div class="chart" id="chart-rates"></div>
+      <div class="legend"><span><span class="dot" style="background:var(--blue)"></span>Saw the ad (test)</span><span><span class="dot" style="background:var(--control)"></span>Saw a PSA (control)</span></div>
+      <p class="caption">Two-proportion z-test: z = <span data-k="z"></span>, p = <span data-k="p"></span>.</p>
+    </div>
+    <div>
+      <h3>Experiment design</h3>
+      <dl class="facts">
+        <dt>Users</dt><dd><span data-k="users"></span> (hashed cookie IDs)</dd>
+        <dt>Split</dt><dd><div class="chart split" id="chart-split"></div></dd>
+        <dt>Control</dt><dd>PSA in the same size and position as the ad</dd>
+        <dt>Period</dt><dd>Nov 2015 to Feb 2016</dd>
+        <dt>Outcome</dt><dd>Bought the handbag during the campaign</dd>
+        <dt>Analysis</dt><dd><span class="term" data-def="Every user counts in the group they were assigned to, whether or not they saw many ads. This keeps the comparison randomized.">Intention-to-treat</span></dd>
+        <dt>Assumptions</dt><dd>$40 per conversion, $9 CPM (case p. 2)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-freq">
+  <h2 id="h-freq">Measured lift stays near zero below 40 impressions, then climbs to 8 to 10pp</h2>
+  <p class="intro">Each point compares test and control users who ended the campaign with the same number of impressions. The PSA was served through the same bidding as the ad, so a control user's impression count shows how often the ad would have reached them.</p>
+  <div class="toggle" role="group" aria-label="Chart view">
+    <button type="button" id="view-lift" aria-pressed="true">Lift (test − control)</button>
+    <button type="button" id="view-rates" aria-pressed="false">Conversion rates</button>
+  </div>
+  <div class="chart" id="chart-bins"></div>
+  <div class="legend" id="legend-bins"></div>
+  <p class="caption">Frequency was not assigned: heavier browsers saw more ads, and the band mix differs between groups. Read this as who the ad worked for, not what one more ad does. <span class="term" data-def="Holm adjusts p-values for the 13 comparisons made here, so the chance of any false positive stays at 5%.">Holm correction</span> across 13 bins. Bins with fewer than 100 users per group (130+ impressions) are left out.</p>
+  <details class="data"><summary>Show data</summary><div class="table-scroll" id="table-bins"></div></details>
+</section>
+
+<section aria-labelledby="h-roi">
+  <div class="two">
+    <div>
+      <h2 id="h-roi">Two bands lose money even at the top of their interval</h2>
+      <p class="intro">ROI by impression band, using ad impressions only. The line marks break-even.</p>
+      <div class="chart" id="chart-roi"></div>
+      <div class="legend"><span><span class="dot" style="background:var(--blue)"></span>Interval above break-even</span><span><span class="dot" style="background:var(--blue-light)"></span>Interval crosses break-even</span><span><span class="dot" style="background:var(--loss)"></span>Interval below break-even</span></div>
+      <p class="caption">Band cutoffs were chosen after seeing the data, so this is exploratory. The follow-up experiments below are the confirmatory step.</p>
+      <details class="data"><summary>Show data</summary><div class="table-scroll" id="table-bands"></div></details>
+    </div>
+    <div>
+      <h3>What holds up and what doesn't</h3>
+      <ul class="checks" id="checks"></ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-power">
+  <div class="two">
+    <div>
+      <h2 id="h-power">A 4% holdout could detect a <span data-k="mde4rel"></span> relative lift and cost <span data-k="opp"></span></h2>
+      <p class="intro">The smallest lift each control share could detect with 80% power at a two-sided 5% level, for this campaign's 588,101 users.</p>
+      <div class="chart" id="chart-power"></div>
+      <p class="caption">The observed lift line is known only after the test, so the <span data-k="smallestShare"></span> crossing point cannot be used to size a holdout.</p>
+    </div>
+    <div>
+      <h3>Why not shrink it</h3>
+      <p>Each percentage point of control share gives up <span data-k="perPoint"></span> in incremental value. The holdout also makes segment analysis possible: at 4% the 200+ band has about <span data-k="ctl200at4"></span> control users, and its lift interval is already <span data-k="ci200"></span> wide. At 1% it would have about <span data-k="ctl200at1"></span>, and that interval would be roughly twice as wide.</p>
+      <p>Recommendation: keep 4% for the next campaign, since both follow-up tests below lean on segment-level comparisons.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-next">
+  <h2 id="h-next">Two experiments to run next</h2>
+  <p class="intro">Designed, not run. Sizes assume the next campaign looks like this one: <span data-k="perArm"></span> users per ad arm with a 4/48/48 split.</p>
+  <div class="two even">
+    <article class="exp">
+      <span class="tag">Heavy end: 200+ impressions</span>
+      <h3>Cap each user at 200 impressions</h3>
+      <p class="q">Does spend past 200 impressions buy anything? The 200+ band took <span data-k="share200"></span> of ad impressions with lift of <span data-k="lift200"></span>.</p>
+      <div class="chart" id="chart-arms-cap"></div>
+      <div class="chart" id="chart-meter" style="margin-top:18px"></div>
+      <dl>
+        <dt>Compared</dt><dd>Users who reach their 200th impression opportunity in each ad arm. Both arms are identical until then, so the comparison stays randomized.</dd>
+        <dt>Metric</dt><dd>Profit per capped user: $40 × conversion difference + ad cost saved</dd>
+        <dt>Decision</dt><dd>Adopt the cap if the 97.5% one-sided lower bound of the conversion difference is above −<span data-k="breakEven"></span>, the loss that would cancel the saving</dd>
+        <dt>Saving</dt><dd><span data-k="capSaving"></span> in ad cost (<span data-k="capShare"></span> of ad impressions)</dd>
+        <dt>Next</dt><dd>If it passes, test a 130-impression cap</dd>
+      </dl>
+    </article>
+    <article class="exp">
+      <span class="tag">Light end: under 30 impressions</span>
+      <h3>Raise bids while a user has fewer than 30 impressions</h3>
+      <p class="q">Are light users low-intent, or did they see too few ads? Their control conversion is <span data-k="ctlRateLight"></span>, against <span data-k="ctlRateCore"></span> in the 30 to 129 band. A cap cannot add impressions, so this needs a bid change.</p>
+      <div class="chart" id="chart-arms-bid"></div>
+      <div class="chart" id="chart-breakeven" style="margin-top:18px"></div>
+      <dl>
+        <dt>Compared</dt><dd>All users in the two ad arms (intention-to-treat). Everyone starts at zero impressions, so no trigger is needed.</dd>
+        <dt>Metric</dt><dd>Profit per user: $40 × conversion difference − extra ad cost per user, both measured in the test</dd>
+        <dt>Decision</dt><dd>Adopt the higher bid if the 95% lower bound of profit per user is above zero</dd>
+        <dt>Check</dt><dd>Impressions per user must rise in the boosted arm, or a null result says nothing</dd>
+        <dt>Limit</dt><dd>The case data has no bid or auction data, so the extra cost is a measured outcome, not an assumption</dd>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="h-method" class="method">
+  <h2 id="h-method">Methods and limitations</h2>
+  <details>
+    <summary>Methods</summary>
+    <ul>
+      <li>Intention-to-treat comparison; pooled two-proportion z-test; unpooled 95% Wald intervals.</li>
+      <li>Sample ratio check against the planned 4% (chi-square goodness of fit) and balance checks on impression band, top-exposure day, and top-exposure hour (chi-square test of independence).</li>
+      <li>Holm correction within each family of comparisons (13 bins, 4 bands, 7 days, 16 hours) and Cochran's Q for differences in lift across groups.</li>
+      <li>Minimum detectable effect by control share at 80% power, two-sided 5%.</li>
+      <li>Cap design: trigger-based analysis and a non-inferiority margin equal to the break-even conversion loss. Bid design: intention-to-treat profit comparison with cost measured in the test.</li>
+    </ul>
+  </details>
+  <details>
+    <summary>Limitations</summary>
+    <ul>
+      <li>Reanalysis of case data; the case notes that some names and figures were altered.</li>
+      <li>$40 per conversion and $9 CPM are case assumptions. ROI intervals reflect sampling uncertainty in the lift only.</li>
+      <li>Impression count, day, and hour are measured after assignment and differ between groups, so results split by them describe who the ad worked for, not causal effects of frequency or timing.</li>
+      <li>Impression bands were chosen after seeing the data.</li>
+      <li>Both follow-up experiments are designs; neither was run.</li>
+    </ul>
+  </details>
+</section>
+</main>
+
+<footer>
+  <p>Data: Rocket Fuel: Measuring the Effectiveness of Online Advertising (Z. Katona and B. Bell, UC Berkeley Haas case B5894, 2017). The raw data and case are not redistributed; this page shows aggregates computed in the notebook.</p>
+  <p>Analysis and design by Seoyeon (Sandy) Tai.</p>
+</footer>
+</div>
+
+<div id="tip" role="tooltip" aria-hidden="true"></div>
+
+<script id="dashboard-data" type="application/json">{"overall":{"total_users":588101,"test_users":564577,"control_users":23524,"control_share":0.039999931984472055,"srm_p":0.9997876225135022,"test_rate":0.025546559636683747,"control_rate":0.01785410644448223,"test_rate_ci":[0.0251349995427061,0.025958119730661394],"control_rate_ci":[0.016161914715211324,0.019546298173753137],"lift":0.007692453192201517,"lift_ci":[0.005950932431611006,0.009433973952792028],"relative_lift":0.43085064022225833,"z":7.3700781265454145,"p_value":1.7052807161559873e-13,"incremental":4342.982145893556,"incremental_ci":[3359.759579441647,5326.204712345465],"incremental_value":173719.28583574222,"campaign_cost":131374.638,"ad_cost":126132.309,"psa_cost":5242.329,"net_profit":42344.64783574222,"roi":0.3223198060172178,"roi_ci":[0.022955307231110094,0.6216843048033258],"opportunity_cost":7238.29075573394,"total_impressions":14597182,"value_per_conversion":40,"cpm":9},"bins":[{"level":0,"n_test":238066,"n_control":10844,"rate_test":0.0031041811934505556,"rate_control":0.003780892659535227,"difference":-0.0006767114660846713,"ci_low":-0.0018532493100283495,"ci_high":0.000499826377859007,"p_value":0.21755655644143607,"p_holm":0.8702262257657443,"significant_after_holm":false,"incremental_conversions":-161.10199188491336},{"level":10,"n_test":126032,"n_control":4260,"rate_test":0.00806144471245398,"rate_control":0.007981220657276996,"difference":8.022405517698478e-05,"ci_low":-0.002637010515679307,"ci_high":0.0027974586260332765,"p_value":0.9540683344548975,"p_holm":1.0,"significant_after_holm":false,"incremental_conversions":10.110798122065745},{"level":20,"n_test":70024,"n_control":3146,"rate_test":0.01642294070604364,"rate_control":0.014939605848696759,"difference":0.001483334857346882,"ci_low":-0.0028589912751133643,"ci_high":0.0058256609898071285,"p_value":0.5211211183117228,"p_holm":1.0,"significant_after_holm":false,"incremental_conversions":103.86904005085808},{"level":30,"n_test":39245,"n_control":1383,"rate_test":0.03121416740986113,"rate_control":0.02675343456254519,"difference":0.004460732847315938,"ci_low":-0.004215844623379487,"ci_high":0.013137310318011363,"p_value":0.34732412155840325,"p_holm":1.0,"significant_after_holm":false,"incremental_conversions":175.061460592914},{"level":40,"n_test":23062,"n_control":945,"rate_test":0.0540716329893331,"rate_control":0.03492063492063492,"difference":0.01915099806869818,"ci_low":0.007087985520290304,"ci_high":0.03121401061710606,"p_value":0.010219351579179066,"p_holm":0.05733613677280469,"significant_after_holm":false,"incremental_conversions":441.66031746031746},{"level":50,"n_test":15733,"n_control":625,"rate_test":0.08097629187059048,"rate_control":0.0432,"difference":0.03777629187059048,"ci_low":0.02127714953149987,"ci_high":0.05427543420968109,"p_value":0.000619063648682402,"p_holm":0.006809700135506421,"significant_after_holm":true,"incremental_conversions":594.3344},{"level":60,"n_test":10997,"n_control":463,"rate_test":0.10721105756115304,"rate_control":0.047516198704103674,"difference":0.059694858857049365,"ci_low":0.03947260335863812,"ci_high":0.07991711435546062,"p_value":3.9906100167153936e-05,"p_holm":0.0005187793021730012,"significant_after_holm":true,"incremental_conversions":656.4643628509718},{"level":70,"n_test":8211,"n_control":368,"rate_test":0.1290951163073925,"rate_control":0.07336956521739131,"difference":0.0557255510900012,"ci_low":0.028115897827822905,"ci_high":0.08333520435217949,"p_value":0.0016666184001688819,"p_holm":0.014999565601519937,"significant_after_holm":true,"incremental_conversions":457.56249999999983},{"level":80,"n_test":6107,"n_control":258,"rate_test":0.14950057311282136,"rate_control":0.05813953488372093,"difference":0.09136103822910044,"ci_low":0.06143925862958656,"ci_high":0.12128281782861432,"p_value":4.6381559829915215e-05,"p_holm":0.0005565787179589826,"significant_after_holm":true,"incremental_conversions":557.9418604651164},{"level":90,"n_test":4661,"n_control":202,"rate_test":0.16369877708646213,"rate_control":0.07425742574257425,"difference":0.08944135134388788,"ci_low":0.051756749687877635,"ci_high":0.12712595299989812,"p_value":0.000686675738570028,"p_holm":0.00686675738570028,"significant_after_holm":true,"incremental_conversions":416.8861386138614},{"level":100,"n_test":3592,"n_control":151,"rate_test":0.17566815144766146,"rate_control":0.09271523178807947,"difference":0.08295291965958199,"ci_low":0.03504815541009682,"ci_high":0.13085768390906716,"p_value":0.008190876681829242,"p_holm":0.05733613677280469,"significant_after_holm":false,"incremental_conversions":297.9668874172185},{"level":110,"n_test":2838,"n_control":134,"rate_test":0.18252290345313602,"rate_control":0.08955223880597014,"difference":0.09297066464716587,"ci_low":0.04257909263414706,"ci_high":0.1433622366601847,"p_value":0.006007414113083869,"p_holm":0.04805931290467095,"significant_after_holm":true,"incremental_conversions":263.85074626865674},{"level":120,"n_test":2323,"n_control":102,"rate_test":0.19070167886353853,"rate_control":0.08823529411764706,"difference":0.10246638474589147,"ci_low":0.045150878237201764,"ci_high":0.15978189125458117,"p_value":0.009297052694931448,"p_holm":0.05733613677280469,"significant_after_holm":false,"incremental_conversions":238.02941176470588}],"bins_q":{"q":175.29145948938105,"dof":12,"p":3.9410882166271655e-31},"bands":[{"level":"1-29","n_test":434122,"n_control":18250,"rate_test":0.006691667319324982,"rate_control":0.006684931506849315,"difference":6.735812475667374e-06,"ci_low":-0.001200131090096627,"ci_high":0.0012136027150479619,"p_value":0.9912761052222955,"p_holm":1.0,"significant_after_holm":false,"incremental_conversions":2.924164383561672,"incremental_low":-521.003309094928,"incremental_high":526.8516378620513,"test_impressions":4440866.0,"share_of_test_users":0.7689332013170923,"share_of_ad_impressions":0.31687197607712075,"ad_cost":39967.794,"share_of_incremental":0.0006734445744606895,"roi":-0.9970734793283196,"roi_low":-1.5214231329304069,"roi_high":-0.4727238257262321},{"level":"30-129","n_test":116769,"n_control":4631,"rate_test":0.07924192208548501,"rate_control":0.04556251349600518,"difference":0.033679408589479834,"ci_low":0.027476760219379164,"ci_high":0.039882056959580504,"p_value":5.11466737279963e-17,"p_holm":2.045866949119852e-16,"significant_after_holm":true,"incremental_conversions":3932.7108615849706,"incremental_low":3208.4338140566856,"incremental_high":4656.987909113256,"test_impressions":6465679.0,"share_of_test_users":0.20682564114372354,"share_of_ad_impressions":0.4613497640798758,"ad_cost":58191.111000000004,"share_of_incremental":0.905716110744485,"roi":1.7033069443097384,"roi_low":1.2054459926408247,"roi_high":2.201167895978653},{"level":"130-199","n_test":7946,"n_control":382,"rate_test":0.1725396425874654,"rate_control":0.12041884816753927,"difference":0.052120794419926134,"ci_low":0.01844360885855005,"ci_high":0.08579797998130222,"p_value":0.00809490906264401,"p_holm":0.02428472718793203,"significant_after_holm":true,"incremental_conversions":414.15183246073303,"incremental_low":146.5529159900387,"incremental_high":681.7507489314274,"test_impressions":1251661.0,"share_of_test_users":0.014074253821887891,"share_of_ad_impressions":0.08931057466013724,"ad_cost":11264.949,"share_of_incremental":0.09538051490590929,"roi":0.47058573442536844,"roi_low":-0.4796144536826977,"roi_high":1.4207859225334352},{"level":"200+","n_test":5740,"n_control":261,"rate_test":0.15574912891986062,"rate_control":0.15708812260536398,"difference":-0.001338993685503359,"ci_low":-0.04647060392262283,"ci_high":0.04379261655161611,"p_value":0.9534819022178463,"p_holm":1.0,"significant_after_holm":false,"incremental_conversions":-7.685823754789281,"incremental_low":-266.74126651585505,"incremental_high":251.36961900627648,"test_impressions":1856495.0,"share_of_test_users":0.010166903717296312,"share_of_ad_impressions":0.1324676851828662,"ad_cost":16708.454999999998,"share_of_incremental":-0.0017700702248549776,"roi":-1.0183998430849275,"roi_low":-1.6385779331861745,"roi_high":-0.3982217529836804}],"bands_q":{"q":117.85606749602357,"dof":3,"p":2.2342682412038306e-25},"balance":[{"variable":"frequency_band","chi_square":21.62251696139117,"dof":3,"p_value":7.815751245163411e-05},{"variable":"mode_impr_day","chi_square":235.61445227291117,"dof":6,"p_value":4.849067664297989e-48},{"variable":"mode_impr_hour","chi_square":192.29173193613582,"dof":23,"p_value":1.0945739710814025e-28}],"power":[{"control_share":0.003,"mde":0.008851985760833132,"mde_relative":0.4957955072329491,"forgone_value":542.8727297744285,"control_users_200_plus":18.003},{"control_share":0.004,"mde":0.00767076097983028,"mde_relative":0.42963566973697026,"forgone_value":723.8303063659048,"control_users_200_plus":24.004},{"control_share":0.005,"mde":0.006865070251020761,"mde_relative":0.3845093156786009,"forgone_value":904.7878829573808,"control_users_200_plus":30.005},{"control_share":0.0075,"mde":0.005613559055407109,"mde_relative":0.3144127695699925,"forgone_value":1357.1818244360713,"control_users_200_plus":45.0075},{"control_share":0.01,"mde":0.004868498015463981,"mde_relative":0.2726822555137493,"forgone_value":1809.5757659147616,"control_users_200_plus":60.01},{"control_share":0.015,"mde":0.003986402255887812,"mde_relative":0.22327649206548783,"forgone_value":2714.3636488721427,"control_users_200_plus":90.015},{"control_share":0.02,"mde":0.0034620169657931903,"mde_relative":0.19390592167456908,"forgone_value":3619.1515318295233,"control_users_200_plus":120.02},{"control_share":0.03,"mde":0.00284250585541603,"mde_relative":0.15920739938763498,"forgone_value":5428.727297744285,"control_users_200_plus":180.03},{"control_share":0.04,"mde":0.0024754005001950685,"mde_relative":0.13864600325378285,"forgone_value":7238.3030636590465,"control_users_200_plus":240.04},{"control_share":0.05,"mde":0.0022264366961441554,"mde_relative":0.1247016591430836,"forgone_value":9047.878829573809,"control_users_200_plus":300.05},{"control_share":0.075,"mde":0.0018436361216925276,"mde_relative":0.10326118125403577,"forgone_value":13571.818244360711,"control_users_200_plus":450.075},{"control_share":0.1,"mde":0.0016197053953402934,"mde_relative":0.09071892790472634,"forgone_value":18095.757659147617,"control_users_200_plus":600.1},{"control_share":0.15,"mde":0.0013623952719171012,"mde_relative":0.07630711042042355,"forgone_value":27143.636488721422,"control_users_200_plus":900.15},{"control_share":0.2,"mde":0.0012174738916306362,"mde_relative":0.06819013292075973,"forgone_value":36191.515318295234,"control_users_200_plus":1200.2},{"control_share":0.3,"mde":0.001064885320527712,"mde_relative":0.05964371971450928,"forgone_value":54287.272977442844,"control_users_200_plus":1800.3},{"control_share":0.4,"mde":0.0009982539597580785,"mde_relative":0.05591172892702152,"forgone_value":72383.03063659047,"control_users_200_plus":2400.4},{"control_share":0.5,"mde":0.0009804730103960594,"mde_relative":0.05491582642037358,"forgone_value":90478.78829573808,"control_users_200_plus":3000.5}],"power_smallest_share":0.004,"days":[{"level":"Monday","n_test":83571,"n_control":3502,"rate_test":0.033241196108697996,"rate_control":0.022558537978298116,"difference":0.01068265813039988,"ci_low":0.0056166762638258086,"ci_high":0.01574863999697395,"p_value":0.0005078177944585116,"p_holm":0.002539088972292558,"significant_after_holm":true},{"level":"Tuesday","n_test":74572,"n_control":2907,"rate_test":0.03044037976720485,"rate_control":0.014447884416924664,"difference":0.015992495350280182,"ci_low":0.011482873585194644,"ci_high":0.02050211711536572,"p_value":6.634401416844177e-07,"p_holm":4.644080991790923e-06,"significant_after_holm":true},{"level":"Wednesday","n_test":77418,"n_control":3490,"rate_test":0.025355860394223564,"rate_control":0.015759312320916905,"difference":0.00959654807330666,"ci_low":0.005318788261552896,"ci_high":0.013874307885060423,"p_value":0.0003764132919621768,"p_holm":0.0022584797517730608,"significant_after_holm":true},{"level":"Thursday","n_test":79077,"n_control":3905,"rate_test":0.021637138485273846,"rate_control":0.020230473751600513,"difference":0.0014066647336733323,"ci_low":-0.003124012643926845,"ci_high":0.0059373421112735095,"p_value":0.5547505660901229,"p_holm":0.5547505660901229,"significant_after_holm":false},{"level":"Friday","n_test":88805,"n_control":3803,"rate_test":0.022464951297787288,"rate_control":0.01630291874835656,"difference":0.006162032549430728,"ci_low":0.0020208667547845045,"ci_high":0.01030319834407695,"p_value":0.011568879769484057,"p_holm":0.03470663930845217,"significant_after_holm":true},{"level":"Saturday","n_test":78802,"n_control":2858,"rate_test":0.021306565823202457,"rate_control":0.013995801259622114,"difference":0.007310764563580343,"ci_low":0.002887519179431786,"ci_high":0.011734009947728899,"p_value":0.007483817945982689,"p_holm":0.029935271783930757,"significant_after_holm":true},{"level":"Sunday","n_test":82332,"n_control":3059,"rate_test":0.024619831900111744,"rate_control":0.020594965675057208,"difference":0.004024866225054536,"ci_low":-0.0011181602739071192,"ci_high":0.009167892724016191,"p_value":0.1571861271117962,"p_holm":0.3143722542235924,"significant_after_holm":false}],"days_q":{"q":24.949468398488182,"dof":6,"p":0.0003488892071089923},"hours":[{"level":8,"n_test":16968,"n_control":659,"rate_test":0.01986091466289486,"rate_control":0.010622154779969651,"difference":0.00923875988292521,"ci_low":0.0011351615353977062,"ci_high":0.017342358230452715,"p_value":0.09253419213003604,"p_holm":0.6477393449102523,"significant_after_holm":false},{"level":9,"n_test":29802,"n_control":1202,"rate_test":0.019528890678477955,"rate_control":0.010815307820299502,"difference":0.008713582858178453,"ci_low":0.0026589316096745997,"ci_high":0.014768234106682307,"p_value":0.030862366020068317,"p_holm":0.35067452877802985,"significant_after_holm":false},{"level":10,"n_test":37454,"n_control":1485,"rate_test":0.021840123885299302,"rate_control":0.013468013468013467,"difference":0.008372110417285835,"ci_low":0.0023255004456176143,"ci_high":0.014418720388954056,"p_value":0.029222877398169155,"p_holm":0.35067452877802985,"significant_after_holm":false},{"level":11,"n_test":44149,"n_control":2061,"rate_test":0.022469365104532377,"rate_control":0.01455604075691412,"difference":0.007913324347618258,"ci_low":0.002561037927778568,"ci_high":0.013265610767457948,"p_value":0.01695173678426611,"p_holm":0.23453096522195363,"significant_after_holm":false},{"level":12,"n_test":45238,"n_control":2060,"rate_test":0.024138998187364605,"rate_control":0.01699029126213592,"difference":0.007148706925228683,"ci_low":0.0013915141087701439,"ci_high":0.012905899741687222,"p_value":0.037470974149991516,"p_holm":0.37470974149991515,"significant_after_holm":false},{"level":13,"n_test":45485,"n_control":2170,"rate_test":0.025063207650873914,"rate_control":0.016589861751152075,"difference":0.008473345899721839,"ci_low":0.0029105421949065105,"ci_high":0.014036149604537168,"p_value":0.012931276059867245,"p_holm":0.19396914089800868,"significant_after_holm":false},{"level":14,"n_test":43779,"n_control":1869,"rate_test":0.028575344343178235,"rate_control":0.016051364365971106,"difference":0.012523979977207129,"ci_low":0.00661657443715174,"ci_high":0.01843138551726252,"p_value":0.0013245812791453037,"p_holm":0.02119330046632486,"significant_after_holm":true},{"level":15,"n_test":42855,"n_control":1828,"rate_test":0.029844825574612065,"rate_control":0.02516411378555799,"difference":0.004680711789054076,"ci_low":-0.002677680312001599,"ci_high":0.012039103890109752,"p_value":0.24792994501967558,"p_holm":0.9917197800787023,"significant_after_holm":false},{"level":16,"n_test":35963,"n_control":1604,"rate_test":0.030892862108277953,"rate_control":0.02805486284289277,"difference":0.0028379992653851834,"ci_low":-0.005438608149377256,"ci_high":0.011114606680147623,"p_value":0.5196094855258995,"p_holm":1.0,"significant_after_holm":false},{"level":17,"n_test":33605,"n_control":1383,"rate_test":0.02853742002678173,"rate_control":0.02024584237165582,"difference":0.00829157765512591,"ci_low":0.0006583637742521012,"ci_high":0.015924791535999717,"p_value":0.06797409359968173,"p_holm":0.5437927487974539,"significant_after_holm":false},{"level":18,"n_test":31052,"n_control":1271,"rate_test":0.02747005023830993,"rate_control":0.025177025963808025,"difference":0.002293024274501905,"ci_low":-0.006509472778691643,"ci_high":0.011095521327695453,"p_value":0.6234252759745922,"p_holm":1.0,"significant_after_holm":false},{"level":19,"n_test":29169,"n_control":1183,"rate_test":0.026809283828722275,"rate_control":0.024513947590870666,"difference":0.0022953362378516085,"ci_low":-0.00670948495620253,"ci_high":0.011300157431905747,"p_value":0.6312833048034326,"p_holm":1.0,"significant_after_holm":false},{"level":20,"n_test":27846,"n_control":1077,"rate_test":0.030273647920706744,"rate_control":0.017641597028783658,"difference":0.012632050891923086,"ci_low":0.004516378360706305,"ci_high":0.020747723423139866,"p_value":0.016752211801568117,"p_holm":0.23453096522195363,"significant_after_holm":false},{"level":21,"n_test":28895,"n_control":1081,"rate_test":0.029174597681259733,"rate_control":0.022201665124884366,"difference":0.006972932556375367,"ci_low":-0.0020220680910735603,"ci_high":0.015967933203824294,"p_value":0.179244641808018,"p_holm":0.89622320904009,"significant_after_holm":false},{"level":22,"n_test":25515,"n_control":917,"rate_test":0.026455026455026454,"rate_control":0.016357688113413305,"difference":0.010097338341613148,"ci_low":0.0016544914822755313,"ci_high":0.018540185200950764,"p_value":0.0595486705035885,"p_holm":0.5359380345322965,"significant_after_holm":false},{"level":23,"n_test":19547,"n_control":619,"rate_test":0.02297027676881363,"rate_control":0.012924071082390954,"difference":0.010046205686422675,"ci_low":0.0009040192649217033,"ci_high":0.019188392107923648,"p_value":0.09822702934661509,"p_holm":0.6477393449102523,"significant_after_holm":false}],"hours_q":{"q":9.69234072076874,"dof":15,"p":0.8386333300972676},"cap_design":[{"cap":200,"trigger_rate":0.010166903717296312,"excess_impressions":708495,"share_of_ad_impressions_saved":0.05055370071755366,"ad_cost_saved":6376.46,"saving_per_triggered_user":1.1109,"break_even_loss_pp":2.777,"baseline_conversion_triggered":0.15574912891986062,"triggered_users_needed_per_arm":2676,"total_users_needed_per_arm":263228},{"cap":130,"trigger_rate":0.024241157539184204,"excess_impressions":1328976,"share_of_ad_impressions_saved":0.09482728172367003,"ad_cost_saved":11960.78,"saving_per_triggered_user":0.8739,"break_even_loss_pp":2.185,"baseline_conversion_triggered":0.16549758877685225,"triggered_users_needed_per_arm":4542,"total_users_needed_per_arm":187352}],"users_per_ad_arm":282288.48,"multiplier":{"ad_arm_users":282288.48,"mde":0.0011765733713408155,"current_ad_cost_per_user":0.22341028593088275,"smallest_judgeable_cost":0.047062934853632624,"extra_costs":[0.01,0.02,0.05,0.1,0.2]}}</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("dashboard-data").textContent);
+  var O = D.overall;
+  var NS = "http://www.w3.org/2000/svg";
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- formatting ---------- */
+  function sign(v) { return v < 0 ? "−" : ""; }
+  function pct(v, d) { d = d === undefined ? 1 : d; return sign(v) + Math.abs(v * 100).toFixed(d) + "%"; }
+  function pp(v, d) { d = d === undefined ? 2 : d; return sign(v) + Math.abs(v * 100).toFixed(d) + "pp"; }
+  function num(v) { return sign(v) + Math.round(Math.abs(v)).toLocaleString("en-US"); }
+  function money(v, d) { d = d || 0; return sign(v) + "$" + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  var SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+  function pval(p) {
+    if (p >= 0.995) return p.toFixed(4);
+    if (p >= 0.01) return p.toFixed(3);
+    if (p >= 0.001) return p.toFixed(4);
+    var e = Math.floor(Math.log10(p));
+    var m = p / Math.pow(10, e);
+    return m.toFixed(1) + " × 10" + String(e).split("").map(function (c) { return SUP[c]; }).join("");
+  }
+
+  var band = {};
+  D.bands.forEach(function (b) { band[b.level] = b; });
+  var light = band["1-29"], core = band["30-129"], heavy = band["200+"];
+  var cap200 = D.cap_design.filter(function (r) { return r.cap === 200; })[0];
+  function powerAt(share) { return D.power.filter(function (r) { return Math.abs(r.control_share - share) < 1e-9; })[0]; }
+  var p4 = powerAt(0.04), p1 = powerAt(0.01);
+
+  var K = {
+    users: num(O.total_users),
+    testShare: pct(1 - O.control_share, 0),
+    controlShare: pct(O.control_share, 0),
+    lift: "+" + pp(O.lift),
+    liftCi: (O.lift_ci[0] * 100).toFixed(2) + " to " + pp(O.lift_ci[1]),
+    rel: "+" + pct(O.relative_lift),
+    inc: num(O.incremental),
+    incCi: num(O.incremental_ci[0]) + " to " + num(O.incremental_ci[1]),
+    roi: pct(O.roi),
+    roiCi: pct(O.roi_ci[0]) + " to " + pct(O.roi_ci[1]),
+    roiLow: pct(O.roi_ci[0]),
+    opp: money(O.opportunity_cost),
+    oppShare: pct(O.opportunity_cost / O.incremental_value),
+    z: O.z.toFixed(2),
+    p: pval(O.p_value),
+    noLiftShare: pct(light.share_of_ad_impressions + heavy.share_of_ad_impressions),
+    noLiftCost: money(light.ad_cost + heavy.ad_cost),
+    adCost: money(O.ad_cost),
+    mde4rel: pct(p4.mde_relative),
+    smallestShare: pct(D.power_smallest_share),
+    perPoint: money(p1.forgone_value),
+    ctl200at4: num(p4.control_users_200_plus),
+    ctl200at1: num(p1.control_users_200_plus),
+    ci200: pp(heavy.ci_high - heavy.ci_low, 1),
+    perArm: num(D.users_per_ad_arm),
+    share200: pct(heavy.share_of_ad_impressions),
+    lift200: pp(heavy.difference) + " (95% CI " + pp(heavy.ci_low) + " to " + pp(heavy.ci_high) + ")",
+    breakEven: cap200.break_even_loss_pp.toFixed(2) + "pp",
+    capSaving: money(cap200.ad_cost_saved),
+    capShare: pct(cap200.share_of_ad_impressions_saved, 2),
+    ctlRateLight: pct(light.rate_control, 2),
+    ctlRateCore: pct(core.rate_control, 2)
+  };
+  document.querySelectorAll("[data-k]").forEach(function (el) {
+    var v = K[el.getAttribute("data-k")];
+    if (v === undefined) { console.warn("missing key", el.getAttribute("data-k")); v = ""; }
+    el.textContent = v;
+  });
+
+  /* ---------- tooltip ---------- */
+  var tip = document.getElementById("tip");
+  function showTip(spec, x, y) {
+    tip.textContent = "";
+    if (spec.title) { var t = document.createElement("div"); t.className = "tt"; t.textContent = spec.title; tip.appendChild(t); }
+    (spec.rows || []).forEach(function (r) {
+      var row = document.createElement("div"); row.className = "row";
+      if (r.color) { var k = document.createElement("span"); k.className = "key"; k.style.background = r.color; row.appendChild(k); }
+      var s = document.createElement("strong"); s.textContent = r.value; row.appendChild(s);
+      var l = document.createElement("span"); l.textContent = r.label; row.appendChild(l);
+      tip.appendChild(row);
+    });
+    if (spec.note) { var n = document.createElement("div"); n.className = spec.rows && spec.rows.length ? "note" : ""; n.textContent = spec.note; tip.appendChild(n); }
+    tip.classList.add("on");
+    tip.setAttribute("aria-hidden", "false");
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = x + 14, top = y + 14;
+    if (left + w > window.innerWidth - 8) left = x - w - 14;
+    if (top + h > window.innerHeight - 8) top = y - h - 14;
+    tip.style.left = Math.max(8, left) + "px";
+    tip.style.top = Math.max(8, top) + "px";
+  }
+  function hideTip() { tip.classList.remove("on"); tip.setAttribute("aria-hidden", "true"); }
+  function bindTip(el, build) {
+    el.setAttribute("tabindex", "0");
+    el.classList.add("hoverable");
+    el.addEventListener("pointermove", function (e) { showTip(build(), e.clientX, e.clientY); });
+    el.addEventListener("pointerleave", hideTip);
+    el.addEventListener("focus", function () { var r = el.getBoundingClientRect(); showTip(build(), r.left + r.width / 2, r.top + r.height / 2); });
+    el.addEventListener("blur", hideTip);
+  }
+  document.querySelectorAll(".term").forEach(function (el) {
+    bindTip(el, function () { return { note: el.getAttribute("data-def") }; });
+  });
+
+  /* ---------- svg helpers ---------- */
+  function svg(container, width, height, label) {
+    container.textContent = "";
+    var s = document.createElementNS(NS, "svg");
+    s.setAttribute("viewBox", "0 0 " + width + " " + height);
+    s.setAttribute("width", width);
+    s.setAttribute("height", height);
+    s.setAttribute("role", "img");
+    s.setAttribute("aria-label", label);
+    container.appendChild(s);
+    return s;
+  }
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function text(parent, x, y, str, cls, anchor) {
+    var t = el("text", { x: x, y: y, "class": cls || "axis-label", "text-anchor": anchor || "start" }, parent);
+    t.textContent = str;
+    return t;
+  }
+  function scale(d0, d1, r0, r1) { return function (v) { return r0 + (v - d0) / (d1 - d0) * (r1 - r0); }; }
+  /* bar with 4px rounded data-end, square at the baseline (horizontal, grows right) */
+  function hbar(parent, x, y, w, h, fill, roundEnd) {
+    if (w <= 0) return null;
+    var r = Math.min(4, w / 2, h / 2);
+    var d = roundEnd
+      ? "M" + x + "," + y + "h" + (w - r) + "a" + r + "," + r + " 0 0 1 " + r + "," + r + "v" + (h - 2 * r) + "a" + r + "," + r + " 0 0 1 " + (-r) + "," + r + "h" + (-(w - r)) + "z"
+      : "M" + x + "," + y + "h" + w + "v" + h + "h" + (-w) + "z";
+    return el("path", { d: d, fill: fill, "class": "lift-on-hover" }, parent);
+  }
+  function textWidth(str, size, weight) {
+    var c = textWidth.c || (textWidth.c = document.createElement("canvas").getContext("2d"));
+    c.font = (weight || 600) + " " + size + "px " + getComputedStyle(document.body).fontFamily;
+    return c.measureText(str).width;
+  }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  var C = {
+    blue: css("--blue"), blueLight: css("--blue-light"), control: css("--control"),
+    gray: css("--band-gray"), gray2: css("--band-gray-2"), loss: css("--loss"),
+    axis: css("--axis"), hair: css("--hair"), ink: css("--ink"), muted: css("--muted")
+  };
+  var BAND_COLOR = { "1-29": C.gray, "30-129": C.blue, "130-199": C.blueLight, "200+": C.gray2 };
+  var BAND_LABEL_INK = { "1-29": C.ink, "30-129": "#ffffff", "130-199": C.ink, "200+": C.ink };
+  var BAND_NAME = { "1-29": "1 to 29 impressions", "30-129": "30 to 129 impressions", "130-199": "130 to 199 impressions", "200+": "200+ impressions" };
+
+  function bandTip(b, focus) {
+    return {
+      title: BAND_NAME[b.level],
+      rows: [
+        { value: pct(b.share_of_ad_impressions), label: "of ad impressions (" + money(b.ad_cost) + ")" },
+        { value: pct(b.share_of_incremental), label: "of incremental purchases" },
+        { value: pp(b.difference), label: "lift, 95% CI " + pp(b.ci_low) + " to " + pp(b.ci_high) },
+        { value: pct(b.roi), label: "ROI, 95% CI " + pct(b.roi_low) + " to " + pct(b.roi_high) },
+        { value: pct(b.share_of_test_users), label: "of test users" }
+      ],
+      note: focus === "inc" && b.share_of_incremental < 0
+        ? "The estimate is slightly below zero, so this band adds nothing to the bar."
+        : (Math.abs(b.difference) < 0.005 && b.p_holm > 0.05 ? "No measurable lift in this band." : "Lift is significant after Holm correction across the 4 bands.")
+    };
+  }
+
+  /* ---------- hero: impressions vs incremental ---------- */
+  function drawMismatch() {
+    var box = document.getElementById("chart-mismatch");
+    var W = box.clientWidth;
+    var narrow = W < 560;
+    var labelW = narrow ? 0 : 168;
+    var barH = 24, rowGap = narrow ? 44 : 30, top = narrow ? 18 : 4;
+    var H = top + 2 * barH + rowGap + 8;
+    var s = svg(box, W, H, "Two stacked bars comparing each impression band's share of ad impressions with its share of incremental purchases.");
+    var x0 = labelW, x1 = W;
+    var rows = [
+      { key: "share_of_ad_impressions", name: "Ad impressions" },
+      { key: "share_of_incremental", name: "Incremental purchases" }
+    ];
+    var order = ["1-29", "30-129", "130-199", "200+"];
+    rows.forEach(function (row, ri) {
+      var y = top + ri * (barH + rowGap);
+      if (narrow) text(s, 0, y - 6, row.name, "row-label");
+      else text(s, 0, y + barH / 2 + 5, row.name, "row-label");
+      var total = 0;
+      order.forEach(function (k) { total += Math.max(0, band[k][row.key]); });
+      var x = x0, avail = x1 - x0;
+      var visible = order.filter(function (k) { return band[k][row.key] > 0.0005; });
+      order.forEach(function (k) {
+        var b = band[k];
+        var share = Math.max(0, b[row.key]);
+        var w = share / total * avail;
+        if (w < 0.5) return;
+        var isLast = k === visible[visible.length - 1];
+        var gap = isLast ? 0 : 2;
+        var g = el("g", {}, s);
+        var mark = hbar(g, x, y, Math.max(0, w - gap), barH, BAND_COLOR[k], isLast);
+        if (mark && !reduceMotion) {
+          mark.style.transformOrigin = x0 + "px " + y + "px";
+          mark.style.transform = "scaleX(0)";
+          mark.style.transition = "transform 700ms cubic-bezier(.2,.7,.2,1)";
+          mark.classList.add("grow");
+          requestAnimationFrame(function () { requestAnimationFrame(function () { mark.style.transform = "scaleX(1)"; }); });
+        }
+        var label = pct(b[row.key]);
+        if (textWidth(label, 13) + 14 < w - gap) {
+          text(g, x + 8, y + barH / 2 + 5, label, BAND_LABEL_INK[k] === "#ffffff" ? "mark-label-light" : "mark-label");
+        }
+        var hit = el("rect", { x: x, y: y - 4, width: Math.max(w, 6), height: barH + 8, "class": "hit" }, g);
+        g.setAttribute("aria-label", BAND_NAME[k] + ": " + label + " of " + row.name.toLowerCase());
+        bindTip(g, function () { return bandTip(b, ri === 1 ? "inc" : "imp"); });
+        x += w;
+      });
+    });
+    var lg = document.getElementById("legend-mismatch");
+    lg.textContent = "";
+    ["1-29", "30-129", "130-199", "200+"].forEach(function (k) {
+      var item = document.createElement("span");
+      var sw = document.createElement("span"); sw.className = "sw"; sw.style.background = BAND_COLOR[k];
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(BAND_NAME[k] + (k === "1-29" || k === "200+" ? " (no measurable lift)" : "")));
+      lg.appendChild(item);
+    });
+  }
+
+  /* ---------- KPI interval strips ---------- */
+  function drawStrip(id, d0, d1, point, lo, hi, zeroLabel, fmt) {
+    var box = document.getElementById(id);
+    var W = box.clientWidth, H = 34;
+    var s = svg(box, W, H, "Point estimate " + fmt(point) + " with 95% interval " + fmt(lo) + " to " + fmt(hi));
+    var x = scale(d0, d1, 6, W - 6);
+    var y = 12;
+    el("line", { x1: 6, x2: W - 6, y1: y, y2: y, stroke: C.hair, "stroke-width": 1 }, s);
+    if (d0 <= 0 && d1 >= 0) {
+      el("line", { x1: x(0), x2: x(0), y1: y - 8, y2: y + 8, stroke: C.axis, "stroke-width": 1 }, s);
+      text(s, x(0), H - 2, zeroLabel, "axis-label", x(0) < 30 ? "start" : "middle");
+    }
+    el("rect", { x: x(lo), y: y - 4, width: Math.max(2, x(hi) - x(lo)), height: 8, rx: 4, fill: C.blue, opacity: 0.25 }, s);
+    el("circle", { cx: x(point), cy: y, r: 5, fill: C.blue, stroke: "#fff", "stroke-width": 2 }, s);
+    var g = el("g", {}, s);
+    el("rect", { x: 0, y: 0, width: W, height: H, "class": "hit" }, g);
+    bindTip(g, function () {
+      return { rows: [{ value: fmt(point), label: "estimate" }, { value: fmt(lo) + " to " + fmt(hi), label: "95% CI" }],
+        note: "The bar is the 95% confidence interval; the line marks " + zeroLabel + "." };
+    });
+  }
+  function drawStrips() {
+    drawStrip("strip-lift", -0.001, 0.011, O.lift, O.lift_ci[0], O.lift_ci[1], "no effect", function (v) { return pp(v); });
+    drawStrip("strip-inc", -300, 6000, O.incremental, O.incremental_ci[0], O.incremental_ci[1], "zero", num);
+    drawStrip("strip-roi", -0.12, 0.75, O.roi, O.roi_ci[0], O.roi_ci[1], "break-even", function (v) { return pct(v); });
+  }
+
+  /* ---------- test vs control rates ---------- */
+  function drawRates() {
+    var box = document.getElementById("chart-rates");
+    var W = box.clientWidth, labelW = 132, H = 128;
+    var s = svg(box, W, H, "Conversion rate: test " + pct(O.test_rate, 2) + ", control " + pct(O.control_rate, 2));
+    var x = scale(0, 0.03, labelW, W - 56);
+    [0, 0.01, 0.02, 0.03].forEach(function (t) {
+      el("line", { x1: x(t), x2: x(t), y1: 8, y2: H - 26, stroke: t === 0 ? C.axis : C.hair, "stroke-width": 1 }, s);
+      text(s, x(t), H - 8, pct(t, 0), "axis-label", "middle");
+    });
+    var rows = [
+      { name: "Saw the ad", n: O.test_users, rate: O.test_rate, ci: O.test_rate_ci, color: C.blue },
+      { name: "Saw a PSA", n: O.control_users, rate: O.control_rate, ci: O.control_rate_ci, color: C.control }
+    ];
+    rows.forEach(function (r, i) {
+      var y = 28 + i * 42;
+      text(s, 0, y + 5, r.name, "row-label");
+      var g = el("g", {}, s);
+      el("line", { x1: x(r.ci[0]), x2: x(r.ci[1]), y1: y, y2: y, stroke: r.color, "stroke-width": 2, "stroke-linecap": "round" }, g);
+      [r.ci[0], r.ci[1]].forEach(function (v) { el("line", { x1: x(v), x2: x(v), y1: y - 5, y2: y + 5, stroke: r.color, "stroke-width": 2, "stroke-linecap": "round" }, g); });
+      el("circle", { cx: x(r.rate), cy: y, r: 6, fill: r.color, stroke: "#fff", "stroke-width": 2 }, g);
+      text(g, x(r.ci[1]) + 10, y + 5, pct(r.rate, 2), "mark-label");
+      el("rect", { x: labelW, y: y - 14, width: W - labelW, height: 28, "class": "hit" }, g);
+      bindTip(g, function () {
+        return { title: r.name, rows: [
+          { value: pct(r.rate, 2), label: "conversion rate", color: r.color },
+          { value: pct(r.ci[0], 2) + " to " + pct(r.ci[1], 2), label: "95% CI" },
+          { value: num(r.n), label: "users" }
+        ] };
+      });
+    });
+  }
+
+  function drawSplit() {
+    var box = document.getElementById("chart-split");
+    var W = Math.min(box.clientWidth, 320), H = 40;
+    var s = svg(box, W, H, "Split: " + K.testShare + " ad, " + K.controlShare + " PSA");
+    var wTest = (1 - O.control_share) * W;
+    hbar(s, 0, 0, wTest - 2, 14, C.blue, false);
+    hbar(s, wTest, 0, W - wTest, 14, C.control, true);
+    text(s, 0, 32, K.testShare + " ad (" + num(O.test_users) + ")", "axis-label");
+    text(s, W, 32, K.controlShare + " PSA (" + num(O.control_users) + ")", "axis-label", "end");
+  }
+
+  /* ---------- lift by impression bin ---------- */
+  var binView = "lift";
+  function binName(b) { return b.level + " to " + (b.level + 9); }
+  function drawBins() {
+    var box = document.getElementById("chart-bins");
+    var W = box.clientWidth, H = W < 560 ? 280 : 340;
+    var m = { l: 52, r: 12, t: 16, b: 46 };
+    var bins = D.bins;
+    var s = svg(box, W, H, binView === "lift" ? "Lift by impression bin with 95% intervals" : "Test and control conversion rates by impression bin");
+    var band = (W - m.l - m.r) / bins.length;
+    var cx = function (i) { return m.l + band * (i + 0.5); };
+    var lo, hi, ticks;
+    if (binView === "lift") { lo = -0.02; hi = 0.16; ticks = [0, 0.04, 0.08, 0.12, 0.16]; }
+    else { lo = 0; hi = 0.2; ticks = [0, 0.05, 0.1, 0.15, 0.2]; }
+    var y = scale(lo, hi, H - m.b, m.t);
+    ticks.forEach(function (t) {
+      el("line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: t === 0 ? C.axis : C.hair, "stroke-width": 1 }, s);
+      text(s, m.l - 8, y(t) + 4, binView === "lift" ? pp(t, 0) : pct(t, 0), "axis-label", "end");
+    });
+    var short = W < 760;
+    bins.forEach(function (b, i) {
+      if (!short || i % 2 === 0) text(s, cx(i), H - m.b + 18, short ? String(b.level) : binName(b), "axis-label", "middle");
+    });
+    text(s, m.l + (W - m.l - m.r) / 2, H - 6, short ? "Impressions per user (start of each 10-impression bin)" : "Impressions per user", "axis-label", "middle");
+
+    if (binView === "lift") {
+      bins.forEach(function (b, i) {
+        var g = el("g", {}, s);
+        var sig = b.significant_after_holm;
+        el("line", { x1: cx(i), x2: cx(i), y1: y(b.ci_low), y2: y(b.ci_high), stroke: C.blue, "stroke-width": 1.5, opacity: sig ? 1 : 0.55 }, g);
+        el("circle", { cx: cx(i), cy: y(b.difference), r: 5.5, fill: sig ? C.blue : "#fff", stroke: C.blue, "stroke-width": 2 }, g);
+        el("rect", { x: cx(i) - band / 2, y: m.t, width: band, height: H - m.t - m.b, "class": "hit" }, g);
+        g.setAttribute("aria-label", binName(b) + " impressions: lift " + pp(b.difference));
+        bindTip(g, function () {
+          return { title: binName(b) + " impressions", rows: [
+            { value: pp(b.difference), label: "lift, 95% CI " + pp(b.ci_low) + " to " + pp(b.ci_high) },
+            { value: pct(b.rate_test, 2), label: "test (" + num(b.n_test) + " users)", color: C.blue },
+            { value: pct(b.rate_control, 2), label: "control (" + num(b.n_control) + " users)", color: C.control },
+            { value: pval(b.p_holm), label: "Holm-adjusted p" }
+          ], note: sig ? "Significant after correcting for 13 comparisons." : "Not significant after correcting for 13 comparisons." };
+        });
+      });
+    } else {
+      [["rate_control", C.control], ["rate_test", C.blue]].forEach(function (pair) {
+        var d = bins.map(function (b, i) { return (i ? "L" : "M") + cx(i) + "," + y(b[pair[0]]); }).join("");
+        el("path", { d: d, fill: "none", stroke: pair[1], "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, s);
+        bins.forEach(function (b, i) { el("circle", { cx: cx(i), cy: y(b[pair[0]]), r: 4, fill: pair[1], stroke: "#fff", "stroke-width": 2 }, s); });
+      });
+      var last = bins[bins.length - 1], li = bins.length - 1;
+      bins.forEach(function (b, i) {
+        var g = el("g", {}, s);
+        el("rect", { x: cx(i) - band / 2, y: m.t, width: band, height: H - m.t - m.b, "class": "hit" }, g);
+        bindTip(g, function () {
+          return { title: binName(b) + " impressions", rows: [
+            { value: pct(b.rate_test, 2), label: "test", color: C.blue },
+            { value: pct(b.rate_control, 2), label: "control", color: C.control },
+            { value: pp(b.difference), label: "difference" }
+          ] };
+        });
+      });
+    }
+    var lg = document.getElementById("legend-bins");
+    lg.textContent = "";
+    function item(kind, color, label, hollow) {
+      var it = document.createElement("span"); var k = document.createElement("span");
+      k.className = kind; k.style.background = hollow ? "#fff" : color;
+      if (hollow) k.style.boxShadow = "inset 0 0 0 2px " + color;
+      it.appendChild(k); it.appendChild(document.createTextNode(label)); lg.appendChild(it);
+    }
+    if (binView === "lift") {
+      item("dot", C.blue, "Significant after Holm correction");
+      item("dot", C.blue, "Not significant", true);
+      var it = document.createElement("span"); it.textContent = "Lift differs across bins: Cochran's Q p = " + pval(D.bins_q.p); lg.appendChild(it);
+    } else {
+      item("ln", C.blue, "Saw the ad (test)");
+      item("ln", C.control, "Saw a PSA (control)");
+    }
+  }
+  function setView(v) {
+    binView = v;
+    document.getElementById("view-lift").setAttribute("aria-pressed", v === "lift");
+    document.getElementById("view-rates").setAttribute("aria-pressed", v === "rates");
+    drawBins();
+  }
+  document.getElementById("view-lift").addEventListener("click", function () { setView("lift"); });
+  document.getElementById("view-rates").addEventListener("click", function () { setView("rates"); });
+
+  /* ---------- ROI by band ---------- */
+  function drawRoi() {
+    var box = document.getElementById("chart-roi");
+    var W = box.clientWidth, narrow = W < 460;
+    var labelW = narrow ? 0 : 150, rowH = narrow ? 64 : 56, top = 18;
+    var H = top + rowH * D.bands.length + 34;
+    var s = svg(box, W, H, "ROI by impression band with 95% intervals");
+    var x = scale(-1.8, 2.4, labelW + 4, W - 8);
+    [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2].forEach(function (t) {
+      el("line", { x1: x(t), x2: x(t), y1: top, y2: H - 30, stroke: t === 0 ? C.ink : C.hair, "stroke-width": t === 0 ? 1.5 : 1 }, s);
+      if (!narrow || t % 1 === 0) text(s, x(t), H - 12, pct(t, 0), "axis-label", "middle");
+    });
+    text(s, x(0) + 6, top - 6, "Break-even", "axis-label");
+    D.bands.forEach(function (b, i) {
+      var y = top + rowH * i + (narrow ? 44 : rowH / 2 + 8);
+      var color = b.roi_low > 0 ? C.blue : (b.roi_high < 0 ? C.loss : C.blueLight);
+      if (narrow) {
+        text(s, 0, y - 18, BAND_NAME[b.level], "row-label");
+      } else {
+        text(s, 0, y - 2, BAND_NAME[b.level].replace(" impressions", ""), "row-label");
+        text(s, 0, y + 14, pct(b.share_of_ad_impressions) + " of impressions", "row-sub");
+      }
+      var g = el("g", {}, s);
+      el("line", { x1: x(b.roi_low), x2: x(b.roi_high), y1: y, y2: y, stroke: color, "stroke-width": 2.5, "stroke-linecap": "round" }, g);
+      el("circle", { cx: x(b.roi), cy: y, r: 6, fill: color, stroke: "#fff", "stroke-width": 2 }, g);
+      text(g, x(b.roi), y - 12, pct(b.roi, 0), "mark-label", "middle");
+      el("rect", { x: labelW, y: y - rowH / 2, width: W - labelW, height: rowH, "class": "hit" }, g);
+      g.setAttribute("aria-label", BAND_NAME[b.level] + ": ROI " + pct(b.roi));
+      bindTip(g, function () { return bandTip(b, "roi"); });
+    });
+  }
+
+  /* ---------- checks ---------- */
+  function iconSvg(kind) {
+    var s = document.createElementNS(NS, "svg");
+    s.setAttribute("viewBox", "0 0 22 22"); s.setAttribute("class", "icon"); s.setAttribute("aria-hidden", "true");
+    if (kind === "pass") {
+      el("circle", { cx: 11, cy: 11, r: 10, fill: css("--good") }, s);
+      el("path", { d: "M6.5 11.5l3 3 6-6.5", fill: "none", stroke: "#fff", "stroke-width": 2.2, "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
+    } else if (kind === "warn") {
+      el("path", { d: "M11 2.5l9 16H2z", fill: css("--warn"), "stroke-linejoin": "round" }, s);
+      el("path", { d: "M11 8.5v4.5", stroke: C.ink, "stroke-width": 2, "stroke-linecap": "round" }, s);
+      el("circle", { cx: 11, cy: 15.8, r: 1.1, fill: C.ink }, s);
+    } else {
+      el("circle", { cx: 11, cy: 11, r: 9.5, fill: "none", stroke: C.control, "stroke-width": 1.5 }, s);
+      el("path", { d: "M7 11h8", stroke: C.control, "stroke-width": 2, "stroke-linecap": "round" }, s);
+    }
+    return s;
+  }
+  function drawChecks() {
+    var bal = {};
+    D.balance.forEach(function (b) { bal[b.variable] = b.p_value; });
+    var list = [
+      ["pass", "Pass: split matches the plan", pct(O.control_share, 2) + " control against 4% planned (p = " + pval(O.srm_p) + ")."],
+      ["warn", "Caution: exposure differs between groups", "Impression band p = " + pval(bal.frequency_band) + ", top day p = " + pval(bal.mode_impr_day) + ", top hour p = " + pval(bal.mode_impr_hour) + ". Splits by these variables are descriptive."],
+      ["pass", "Pass: multiple comparisons corrected", "Holm correction within 13 bins, 4 bands, 7 days, and 16 hours."],
+      ["none", "No hour-of-day effect", "No evidence that lift differs by hour (Cochran's Q p = " + pval(D.hours_q.p) + ")."],
+      ["none", "Day of week not used for decisions", "Lift differs by day (p = " + pval(D.days_q.p) + "), but the day mix differs between groups."]
+    ];
+    var ul = document.getElementById("checks");
+    ul.textContent = "";
+    list.forEach(function (c) {
+      var li = document.createElement("li");
+      li.appendChild(iconSvg(c[0]));
+      var d = document.createElement("div");
+      var w = document.createElement("span"); w.className = "what"; w.textContent = c[1];
+      d.appendChild(w); d.appendChild(document.createTextNode(c[2]));
+      li.appendChild(d); ul.appendChild(li);
+    });
+  }
+
+  /* ---------- control size ---------- */
+  function drawPower() {
+    var box = document.getElementById("chart-power");
+    var W = box.clientWidth, H = W < 560 ? 250 : 290;
+    var m = { l: 48, r: 14, t: 14, b: 44 };
+    var s = svg(box, W, H, "Minimum detectable relative lift by control share");
+    var lx = function (v) { return Math.log10(v); };
+    var x = scale(lx(0.003), lx(0.5), m.l, W - m.r);
+    var y = scale(0, 0.55, H - m.b, m.t);
+    [0, 0.1, 0.2, 0.3, 0.4, 0.5].forEach(function (t) {
+      el("line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: t === 0 ? C.axis : C.hair, "stroke-width": 1 }, s);
+      text(s, m.l - 8, y(t) + 4, pct(t, 0), "axis-label", "end");
+    });
+    [0.005, 0.01, 0.02, 0.04, 0.1, 0.2, 0.5].forEach(function (t) {
+      text(s, x(lx(t)), H - m.b + 18, pct(t, t < 0.01 ? 1 : 0), "axis-label", "middle");
+    });
+    text(s, m.l + (W - m.l - m.r) / 2, H - 6, "Control share (log scale)", "axis-label", "middle");
+    var obs = O.relative_lift;
+    el("line", { x1: m.l, x2: W - m.r, y1: y(obs), y2: y(obs), stroke: C.muted, "stroke-width": 1 }, s);
+    text(s, W - m.r, y(obs) - 6, "Observed lift " + pct(obs), "axis-label", "end");
+    var pts = D.power;
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + x(lx(p.control_share)) + "," + y(p.mde_relative); }).join("");
+    el("path", { d: d, fill: "none", stroke: C.blue, "stroke-width": 2, "stroke-linejoin": "round" }, s);
+    var px = x(lx(0.04)), py = y(p4.mde_relative);
+    el("circle", { cx: px, cy: py, r: 6, fill: C.blue, stroke: "#fff", "stroke-width": 2 }, s);
+    text(s, px + 10, py - 10, "4%: " + pct(p4.mde_relative) + " relative", "mark-label");
+    var cross = el("line", { x1: 0, x2: 0, y1: m.t, y2: H - m.b, stroke: C.axis, "stroke-width": 1, opacity: 0 }, s);
+    var dot = el("circle", { r: 5, fill: C.blue, stroke: "#fff", "stroke-width": 2, opacity: 0 }, s);
+    var g = el("g", {}, s);
+    var hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, "class": "hit" }, g);
+    var current = p4;
+    function nearest(clientX) {
+      var r = s.getBoundingClientRect();
+      var vx = (clientX - r.left) * (W / r.width);
+      var best = pts[0], bd = Infinity;
+      pts.forEach(function (p) { var dd = Math.abs(x(lx(p.control_share)) - vx); if (dd < bd) { bd = dd; best = p; } });
+      return best;
+    }
+    function mark(p) {
+      current = p;
+      var cx = x(lx(p.control_share));
+      cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("opacity", 1);
+      dot.setAttribute("cx", cx); dot.setAttribute("cy", y(p.mde_relative)); dot.setAttribute("opacity", 1);
+    }
+    g.addEventListener("pointermove", function (e) { mark(nearest(e.clientX)); });
+    g.addEventListener("pointerleave", function () { cross.setAttribute("opacity", 0); dot.setAttribute("opacity", 0); });
+    bindTip(g, function () {
+      var p = current;
+      return { title: pct(p.control_share, p.control_share < 0.01 ? 2 : 1) + " control share", rows: [
+        { value: pct(p.mde_relative), label: "smallest detectable relative lift" },
+        { value: pp(p.mde, 3), label: "in absolute terms" },
+        { value: money(p.forgone_value), label: "incremental value given up" },
+        { value: num(p.control_users_200_plus), label: "control users in the 200+ band" }
+      ] };
+    });
+    g.addEventListener("focus", function () { mark(p4); });
+  }
+
+  /* ---------- follow-up experiments ---------- */
+  function drawArms(id, labels) {
+    var box = document.getElementById(id);
+    var W = box.clientWidth, H = 16;
+    var shares = [0.04, 0.48, 0.48], colors = [C.control, C.blueLight, C.blue];
+    var s = svg(box, W, H, "Arms: " + labels.join(", "));
+    var x = 0;
+    shares.forEach(function (sh, i) {
+      var w = sh * W;
+      hbar(s, x, 0, w - (i < 2 ? 2 : 0), 16, colors[i], i === 2);
+      x += w;
+    });
+    var lg = document.createElement("div");
+    lg.className = "legend";
+    labels.forEach(function (l, i) {
+      var it = document.createElement("span");
+      var sw = document.createElement("span"); sw.className = "sw"; sw.style.background = colors[i];
+      it.appendChild(sw); it.appendChild(document.createTextNode(l)); lg.appendChild(it);
+    });
+    box.appendChild(lg);
+  }
+  function drawMeter() {
+    var box = document.getElementById("chart-meter");
+    var W = box.clientWidth, H = 52;
+    var need = cap200.total_users_needed_per_arm, have = D.users_per_ad_arm;
+    var s = svg(box, W, H, "Users needed per arm " + num(need) + " of " + num(have) + " available");
+    text(s, 0, 12, "Users needed per arm: " + num(need) + " of " + num(have) + " available", "axis-label");
+    var x = scale(0, have, 0, W);
+    hbar(s, 0, 20, W, 10, css("--hair"), true);
+    hbar(s, 0, 20, x(need), 10, C.blue, true);
+    var g = el("g", {}, s);
+    el("rect", { x: 0, y: 14, width: W, height: 22, "class": "hit" }, g);
+    bindTip(g, function () {
+      return { rows: [
+        { value: num(cap200.triggered_users_needed_per_arm), label: "users reaching 200 impressions, per arm" },
+        { value: pct(cap200.trigger_rate, 2), label: "of users reach 200 impressions" },
+        { value: num(need), label: "users per arm in total" }
+      ], note: "Sized for 80% power if the cap costs no conversions, with the break-even loss as the margin." };
+    });
+  }
+  function drawBreakeven() {
+    var box = document.getElementById("chart-breakeven");
+    var W = box.clientWidth, labelW = W < 460 ? 112 : 150;
+    var costs = D.multiplier.extra_costs, mde = D.multiplier.mde;
+    var rowH = 22, top = 22, H = top + rowH * costs.length + 24;
+    var s = svg(box, W, H, "Break-even lift for each extra cost per user, against the smallest detectable difference");
+    text(s, 0, 12, "Break-even lift by extra ad cost per user", "axis-label");
+    var x = scale(0, 0.0055, labelW, W - 56);
+    var mx = x(mde);
+    costs.forEach(function (c, i) {
+      var be = c / O.value_per_conversion;
+      var y = top + i * rowH;
+      text(s, labelW - 10, y + 13, "+" + money(c, 2) + (W < 460 ? "" : " per user"), "axis-label", "end");
+      var ok = be >= mde;
+      hbar(s, labelW, y + 3, x(be) - labelW, 12, ok ? C.blue : C.gray, true);
+      text(s, Math.max(x(be), mx) + 6, y + 13, pp(be, 3), "axis-label");
+    });
+    el("line", { x1: mx, x2: mx, y1: top - 2, y2: top + rowH * costs.length, stroke: C.ink, "stroke-width": 1.5 }, s);
+    text(s, mx, H - 6, "Smallest detectable " + pp(mde, 3), "axis-label", mx > W - 120 ? "end" : "middle");
+    var g = el("g", {}, s);
+    el("rect", { x: 0, y: top, width: W, height: rowH * costs.length, "class": "hit" }, g);
+    bindTip(g, function () {
+      return { note: "Only a bid change that adds at least " + money(D.multiplier.smallest_judgeable_cost, 3) + " per user (" + pct(D.multiplier.smallest_judgeable_cost / D.multiplier.current_ad_cost_per_user) + " of current ad spend per user) has a break-even lift this test can detect. Blue bars clear that bar." };
+    });
+  }
+
+  /* ---------- data tables ---------- */
+  function table(id, headers, rows) {
+    var box = document.getElementById(id);
+    var t = document.createElement("table");
+    var thead = document.createElement("thead"), tr = document.createElement("tr");
+    headers.forEach(function (h) { var th = document.createElement("th"); th.textContent = h; tr.appendChild(th); });
+    thead.appendChild(tr); t.appendChild(thead);
+    var tb = document.createElement("tbody");
+    rows.forEach(function (r) {
+      var tr2 = document.createElement("tr");
+      r.forEach(function (c) { var td = document.createElement("td"); td.textContent = c; tr2.appendChild(td); });
+      tb.appendChild(tr2);
+    });
+    t.appendChild(tb); box.textContent = ""; box.appendChild(t);
+  }
+  table("table-bins", ["Impressions", "Test users", "Control users", "Test rate", "Control rate", "Lift", "95% CI", "Holm p"],
+    D.bins.map(function (b) { return [binName(b), num(b.n_test), num(b.n_control), pct(b.rate_test, 2), pct(b.rate_control, 2), pp(b.difference), pp(b.ci_low) + " to " + pp(b.ci_high), pval(b.p_holm)]; }));
+  table("table-bands", ["Band", "Ad impressions", "Ad cost", "Lift (95% CI)", "Incremental", "ROI (95% CI)"],
+    D.bands.map(function (b) { return [BAND_NAME[b.level], pct(b.share_of_ad_impressions), money(b.ad_cost), pp(b.difference) + " (" + pp(b.ci_low) + " to " + pp(b.ci_high) + ")", pct(b.share_of_incremental), pct(b.roi) + " (" + pct(b.roi_low) + " to " + pct(b.roi_high) + ")"]; }));
+
+  /* ---------- render and re-render on resize ---------- */
+  function renderAll() {
+    drawMismatch(); drawStrips(); drawRates(); drawSplit(); drawBins(); drawRoi(); drawPower();
+    drawArms("chart-arms-cap", ["PSA 4%", "No cap 48%", "Cap at 200, 48%"]);
+    drawArms("chart-arms-bid", ["PSA 4%", "Standard bids 48%", "Higher bids under 30, 48%"]);
+    drawMeter(); drawBreakeven();
+  }
+  drawChecks();
+  var lastW = 0, timer = null;
+  function maybeRender() {
+    var w = document.querySelector(".wrap").clientWidth;
+    if (w !== lastW) { lastW = w; renderAll(); }
+  }
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(maybeRender);
+  maybeRender();
+  window.addEventListener("resize", function () { clearTimeout(timer); timer = setTimeout(maybeRender, 120); });
+})();
+</script>
+</body>
+</html>
